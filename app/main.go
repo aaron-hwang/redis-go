@@ -1,7 +1,7 @@
 package main
 
 import (
-	server "redis-go/pkg/redis-server"
+	server "redis-go/app/pkg/server"
 )
 
 func main() {
