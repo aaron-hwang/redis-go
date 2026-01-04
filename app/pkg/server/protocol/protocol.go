@@ -1,9 +1,15 @@
 package protocol
 
-// This file has all the logic for parsing and representing the RESP protocol.
+// This file has all the logic for representing the RESP protocol.
 
 type RespType = byte
 
+/*
+	https://redis.io/docs/latest/develop/reference/protocol-spec/#resp-protocol-description
+
+N.B: RESP used to support representing null types with special cases of bulk or array types.
+This is RESP3, so we will not be doing that here.
+*/
 const (
 	SimpleString RespType = '+'
 	SimpleError  RespType = '-'
@@ -26,8 +32,8 @@ const (
 
 // Struct for representing an in-memory RESP protocol value.
 type RespVal struct {
-	typ_ RespType
-	int_ int
-	str_ string
-	arr  []RespVal
+	typ RespType
+	num int64
+	str string
+	arr []RespVal
 }
