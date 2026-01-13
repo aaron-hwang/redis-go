@@ -1,26 +1,44 @@
 package protocol
 
 import (
-	"bufio"
-	"fmt"
 	"strings"
 	"testing"
 )
 
 func TestRespParser(t *testing.T) {
-	parser := NewRespParser(strings.NewReader("*1\r\n$4\r\nping\r\n"))
-	val, err := parser.Read()
-	if err != nil {
-		t.Fatalf("Parser came across an error where none expected %s", err)
+	tests := []struct {
+		name       string
+		input      string
+		expectType RespType
+		wantStr    string
+		wantNum    int64
+	}{
+		{
+			name:       "Simple string",
+			input:      "+hello world\r\n",
+			expectType: SimpleString,
+			wantStr:    "hello world",
+		},
 	}
-	fmt.Printf("t: %v\n", val)
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			parser := NewRespParser(strings.NewReader(test.input))
+			val, err := parser.Read()
+			if err != nil {
+				t.Fatalf("error in test %v: %v", test.name, err)
+			}
 
-func TestRandomTest(t *testing.T) {
-	parser := NewRespParser(bufio.NewReader(strings.NewReader("*1\r\n$4\r\nping\r\n")))
-	val, _, err := parser.ReadLine()
-	if err != nil {
-		t.Fatalf("Parser came across an error where none expected %s", err)
+			if val.typ != test.expectType {
+				t.Fatalf("expected type of %v, got %v", val.typ, test.expectType)
+			}
+
+			if test.wantStr != "" && val.str != test.wantStr {
+				t.Fatalf("expected %q, got %q", test.wantStr, val.str)
+			}
+
+			if test.wantNum != 0 && val.num != test.wantNum {
+				t.Fatalf("expected %d, got %d", test.wantNum, val.num)
+			}
+		})
 	}
-	t.Logf("test: %v", string(val))
 }
