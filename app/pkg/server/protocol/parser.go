@@ -38,11 +38,28 @@ func (rp *RespParser) Read() (RespVal, error) {
 	}
 }
 
+func (rp *RespParser) ReadLine() (line []byte, n int, err error) {
+	for {
+		b, err := rp.reader.ReadByte()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		n++
+		line = append(line, b)
+		if len(line) >= 2 && line[n-2] == '\r' && line[n-1] == '\n' {
+			break
+		}
+	}
+
+	return line[:len(line)-2], n, nil
+}
+
 // To make life easier for myself, type byte should already be parsed by the time these helpers are called.
 // For the purpose of handling nested types, all these functions should also parse past the \r\n delimiters.
 
 func (rp *RespParser) ReadSimpleString() (RespVal, error) {
-	text, _, err := rp.reader.ReadLine()
+	text, _, err := rp.ReadLine()
 	if err != nil {
 		return RespVal{}, err
 	}
@@ -64,7 +81,7 @@ func (rp *RespParser) ReadBulkString() (RespVal, error) {
 	if err != nil {
 		return RespVal{}, err
 	}
-	data, _, err := rp.reader.ReadLine()
+	data, _, err := rp.ReadLine()
 	if err != nil {
 		return RespVal{}, err
 	}
@@ -73,7 +90,7 @@ func (rp *RespParser) ReadBulkString() (RespVal, error) {
 
 // Helper function: Parses an int literal from a resp message, and returns a go int.
 func (rp *RespParser) parseInt() (int64, error) {
-	text, _, err := rp.reader.ReadLine()
+	text, _, err := rp.ReadLine()
 	if err != nil {
 		return 0, err
 	}
@@ -111,7 +128,7 @@ func (rp *RespParser) ReadArray() (RespVal, error) {
 		return RespVal{}, err
 	}
 
-	result := RespVal{typ: Array, arr: make([]RespVal, numElements)}
+	result := RespVal{typ: Array, arr: make([]RespVal, 0, numElements)}
 
 	/* Recursively call read on each element of the array, since
 	each element could be any resp value type (another array!)
@@ -128,7 +145,7 @@ func (rp *RespParser) ReadArray() (RespVal, error) {
 }
 
 func (rp *RespParser) ReadNull() (RespVal, error) {
-	_, _, err := rp.reader.ReadLine()
+	_, _, err := rp.ReadLine()
 	if err != nil {
 		return RespVal{}, err
 	}
